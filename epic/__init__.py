@@ -50,7 +50,7 @@ def pick_single( image, n=-1, width=15, backend='TkAgg', ticks=False, line=False
             return
 
         points.append( (event.xdata, event.ydata) )
-        ax.scatter( event.xdata, event.ydata, marker='.' )
+        ax.scatter( event.xdata, event.ydata, marker='o' )
         if line and len(points) > 1:
             x0,y0 = points[-1]
             x1,y1 = points[-2]
@@ -119,7 +119,7 @@ def pick_multi( image1, image2, n=-1, width=15, backend='TkAgg', ticks=False, li
         if event.inaxes is ax[0]:
             if n== -1 or len(points_1) < n:
                 points_1.append( (event.xdata, event.ydata) )
-                ax[0].scatter( event.xdata, event.ydata, marker='.' )
+                ax[0].scatter( event.xdata, event.ydata, marker='o' )
                 if line and len(points_1) > 1:
                     x0, y0 = points_1[-1]
                     x1, y1 = points_1[-2]
@@ -127,7 +127,7 @@ def pick_multi( image1, image2, n=-1, width=15, backend='TkAgg', ticks=False, li
         elif event.inaxes is ax[1]:
             if n == -1 or len(points_2) < n:
                 points_2.append((event.xdata, event.ydata))
-                ax[1].scatter(event.xdata, event.ydata, marker='.')
+                ax[1].scatter(event.xdata, event.ydata, marker='o')
                 if line and len(points_2) > 1:
                     x0, y0 = points_2[-1]
                     x1, y1 = points_2[-2]
@@ -151,41 +151,63 @@ def pick_multi( image1, image2, n=-1, width=15, backend='TkAgg', ticks=False, li
         return pick_multi( image1, image2, n, width, backend, ticks, line, **kwds )
     return points_1, points_2
 
+def save_points( out, path1, points1, path2=None, points2=None):
+    """
+    Save points to a text file.
+    :param out: Path of the output file to write
+    :param path1: Path of the first image, or None to omit.
+    :param points1: Points picked in first image.
+    :param path2: Path of second image, or None to omit.
+    :param points2: Points picked from the second image, or None.
+    :returns : the number of points or point-pairs written to the file.
+    """
+    n = 0
+    if out is not None:
+        with open(out, 'w') as f:
+            if points1 is not None and points2 is None:  # single-image mode
+                if path1 is not None:
+                    f.write(path1 + '\n')
+                for px, py in points1:
+                    f.write('%f,%f\n' % (px, py))
+                    n += 1
+            elif points1 is not None and points2 is not None:  # multi-image mode
+                if path1 is not None and path2 is not None:
+                    f.write(path1 + '\n')
+                    f.write(path2 + '\n')
+                for _p1, _p2 in zip(points1, points2):
+                    f.write('%f,%f,    %f,%f\n' % (_p1[0], _p1[1], _p2[0], _p2[1]))
+                    n += 1
+    return n
+
+def launch_gui( n = -1 ):
+    """
+    Launch GUI application.
+
+    :param n: The number of points to pick. -1 (defaults) allows unlimited points.
+    """
+
+    import easygui
+
+    file1 = easygui.fileopenbox(msg="Choose a file")
+    file2 = easygui.fileopenbox(msg="Choose a second file (or cancel to work with single image)")
+
+    P1, P2 = None, None
+    if file2 is None and file1 is not None:
+        P1 = pick_single(file1, n=n)
+    elif file2 is not None and file1 is not None:
+        P1, P2 = pick_multi(file1, file2, n=n)
+    else:
+        return # cancel
+
+    out = easygui.filesavebox(msg="Choose output")
+    n = save_points( out, file1, P1, file2, P2 )
+
+    if easygui.ynbox("Saved %d points to %s. Would you like to re-launch?" % (n, out), "Process a new file?", ):
+        launch_gui() # recurse
+
 # launch in gui mode
 if __name__ == '__main__':
-    import easygui
-    loop = True
-    while loop:
-        file1 = easygui.fileopenbox(msg="Choose a file")
-        file2 = easygui.fileopenbox(msg="Choose a second file (or cancel to work with single image)")
-
-        P0, P1, P2 = None, None, None
-        if file2 is None and file1 is not None:
-            P0 = pick_single( file1 )
-        elif file2 is not None and file1 is not None:
-            P1, P2 = pick_multi( file1, file2 )
-        else:
-            exit() # done.
-
-        out = easygui.filesavebox(msg="Choose output")
-        n = 0
-        if out is not None:
-            with open(out, 'w') as f:
-                if P0 is not None: # single-image mode
-                    f.write(file1 + '\n')
-                    for px,py in P0:
-                        f.write('%f,%f\n' % (px,py))
-                        n+=1
-                if P1 is not None: # multi-image mode
-                    f.write(file1 + '\n')
-                    f.write(file2 + '\n')
-                    assert P2 is not None, "Error - no data for second image?"
-                    for _p1, _p2 in zip(P1,P2):
-                        f.write('%f,%f,    %f,%f\n' % (_p1[0], _p1[1], _p2[0], _p2[1]) )
-                        n+=1
-
-        if not easygui.ynbox("Saved %d points to %s. Would you like to re-launch?" % (n,out), "Process a new file?", ):
-            loop = False # done
+    launch_gui()
 
 
 
