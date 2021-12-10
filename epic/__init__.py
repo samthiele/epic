@@ -70,7 +70,7 @@ def pick_single( image, n=-1, width=15, backend='TkAgg', ticks=False, line=False
     plt.show() # block until finished picking
 
     if len(points) == 0 and redo[0]:
-        return pick_single( image, width, backend )
+        return pick_single( image, n, width, backend, ticks, line, **kwds )
     return points
 
 def pick_multi( image1, image2, n=-1, width=15, backend='TkAgg', ticks=False, line=False, **kwds ):
@@ -148,7 +148,45 @@ def pick_multi( image1, image2, n=-1, width=15, backend='TkAgg', ticks=False, li
     fig.tight_layout()
     plt.show() # block until finished picking
     if (len(points_1) == 0 or len(points_2) == 0) and redo[0]:
-        return pick_multi( image1, image2, width, backend )
+        return pick_multi( image1, image2, n, width, backend, ticks, line, **kwds )
     return points_1, points_2
+
+# launch in gui mode
+if __name__ == '__main__':
+    import easygui
+    loop = True
+    while loop:
+        file1 = easygui.fileopenbox(msg="Choose a file")
+        file2 = easygui.fileopenbox(msg="Choose a second file (or cancel to work with single image)")
+
+        P0, P1, P2 = None, None, None
+        if file2 is None and file1 is not None:
+            P0 = pick_single( file1 )
+        elif file2 is not None and file1 is not None:
+            P1, P2 = pick_multi( file1, file2 )
+        else:
+            exit() # done.
+
+        out = easygui.filesavebox(msg="Choose output")
+        n = 0
+        if out is not None:
+            with open(out, 'w') as f:
+                if P0 is not None: # single-image mode
+                    f.write(file1 + '\n')
+                    for px,py in P0:
+                        f.write('%f,%f\n' % (px,py))
+                        n+=1
+                if P1 is not None: # multi-image mode
+                    f.write(file1 + '\n')
+                    f.write(file2 + '\n')
+                    assert P2 is not None, "Error - no data for second image?"
+                    for _p1, _p2 in zip(P1,P2):
+                        f.write('%f,%f,    %f,%f\n' % (_p1[0], _p1[1], _p2[0], _p2[1]) )
+                        n+=1
+
+        if not easygui.ynbox("Saved %d points to %s. Would you like to re-launch?" % (n,out), "Process a new file?", ):
+            loop = False # done
+
+
 
 
