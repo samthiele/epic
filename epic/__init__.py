@@ -19,7 +19,7 @@ def pick_single( image, n=-1, width=15, backend='TkAgg', ticks=False, line=False
     :param image: The image to pick on (string path or numpy array).
     :param n: The number of points to pick. -1 (defaults) allows unlimited points.
     :param width: The width of the plot to create.
-    :param backend: The matplotlib backend to use.
+    :param backend: The matplotlib backend to use. Set to None to use currently active backend.
     :param ticks: True if axes ticks should be displayed. Default is False.
     :param line: True if a line should be drawn between successively picked points.
     :keyword : Keywords are passed to plt.imshow.
@@ -30,7 +30,8 @@ def pick_single( image, n=-1, width=15, backend='TkAgg', ticks=False, line=False
         image = load_image(image)
 
     # set backend
-    matplotlib.use(backend)
+    if backend is not None:
+        matplotlib.use(backend)
 
     aspx = image.shape[0] / image.shape[1]
 
@@ -82,7 +83,7 @@ def pick_multi( image1, image2, n=-1, width=15, backend='TkAgg', ticks=False, li
     :param image2: the second image to pick (string path or numpy array).
     :param n: The number of points to pick. -1 (defaults) allows unlimited points.
     :param width: The width of the plot to create.
-    :param backend: The matplotlib backend to use.
+    :param backend: The matplotlib backend to use. Set to None to use currently active backend.
     :param ticks: True if axes ticks should be displayed. Default is False.
     :param line: True if a line should be drawn between successively picked points.
     :keyword : Keywords are passed to plt.imshow for each image.
@@ -95,7 +96,8 @@ def pick_multi( image1, image2, n=-1, width=15, backend='TkAgg', ticks=False, li
         image2 = load_image(image2)
 
     # set backend
-    matplotlib.use(backend)
+    if backend is not None:
+        matplotlib.use(backend)
 
     aspx = image1.shape[0] / image1.shape[1]
 
