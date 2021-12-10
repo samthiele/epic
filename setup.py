@@ -4,7 +4,7 @@ import setuptools
 from setuptools import setup
 
 setup(
-    name='epic',
+    name='epic_mpl',
     version='0.1',
     url='https://github.com/samthiele/epic',
     license='MIT',
